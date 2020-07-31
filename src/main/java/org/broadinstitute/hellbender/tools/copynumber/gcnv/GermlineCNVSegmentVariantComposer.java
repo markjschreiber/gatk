@@ -155,7 +155,7 @@ public final class GermlineCNVSegmentVariantComposer extends GermlineCNVVariantC
 
         /* header lines related to genotype formatting */
         result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_KEY, 1,
-                VCFHeaderLineType.Integer, "Segment genotype"));
+                VCFHeaderLineType.String, "Segment genotype"));
         result.addMetaDataLine(new VCFFormatHeaderLine(CN, 1,
                 VCFHeaderLineType.Integer, "Segment most-likely copy-number call"));
         result.addMetaDataLine(new VCFFormatHeaderLine(NP, 1,

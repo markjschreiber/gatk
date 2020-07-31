@@ -353,7 +353,7 @@ public class JointCNVSegmentation extends MultiVariantWalkerGroupedOnStart {
             if (sampleDB == null) {
                 oneShotLogger.warn("No pedigree file supplied for sex genotype inferrence.");
             } else {
-                oneShotLogger.warn("Pedigree file did not contain sample " +g.getSampleName() + ".");
+                oneShotLogger.warn("Pedigree file did not contain sample " + sampleName + ".");
             }
             if (g != null) {
                 oneShotLogger.warn("Sample " + g.getSampleName() + " ploidy will be determined from segments VCF genotype ploidy.");

@@ -169,7 +169,8 @@ task JointSegmentation {
   command <<<
     set -e
     /gatk/gatk --java-options "-Xmx~{command_mem_mb}m" JointCNVSegmentation \
-    -R ~{ref_fasta} -O clustered.vcf.gz -V ~{sep=' -V ' segments_vcfs} --disable-sequence-dictionary-validation --model-call-intervals ~{model_intervals}
+    -R ~{ref_fasta} -O clustered.vcf.gz -V ~{sep=' -V ' segments_vcfs} --disable-sequence-dictionary-validation --model-call-intervals ~{model_intervals} \
+    -ped ~{ped_file}
     >>>
 
     output {
