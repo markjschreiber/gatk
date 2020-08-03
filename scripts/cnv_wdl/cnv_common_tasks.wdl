@@ -452,7 +452,7 @@ task PostprocessGermlineCNVCalls {
 
     command <<<
         set -eu
-        export GATK_LOCAL_JAR=~{default="/root/gatk.jar" gatk4_jar_override}
+        ~{"export GATK_LOCAL_JAR=" + gatk4_jar_override}
 
         sharded_interval_lists_array=(~{sep=" " sharded_interval_lists})
 

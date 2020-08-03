@@ -2,7 +2,6 @@ version 1.0
 
 import "../cnv_common_tasks.wdl" as CNVTasks
 import "AnnotateChromosome.wdl" as AnnotateVcf
-import "Structs.wdl" as Structs
 
 workflow JointCallExomeCNVs {
 
@@ -77,7 +76,7 @@ workflow JointCallExomeCNVs {
               intervals_vcf_index = intervals_vcf_indexes[scatter_index],
               clustered_vcf = JointSegmentation.clustered_vcf,
               clustered_vcf_index = JointSegmentation.clustered_vcf_index,
-              gatk_docker = gatk_docker
+              gatk_docker = gatk_docker_clustering
       }
     }
 
@@ -130,7 +129,7 @@ task MakePedFile {
     }
 
     runtime {
-      docker: "alpine"
+      docker: "gatksv/sv-base-mini:b3af2e3"
       memory: "3000 MB"
       disks: "local-disk 100 SSD"
       cpu: 1
@@ -169,8 +168,7 @@ task JointSegmentation {
   command <<<
     set -e
     /gatk/gatk --java-options "-Xmx~{command_mem_mb}m" JointCNVSegmentation \
-    -R ~{ref_fasta} -O clustered.vcf.gz -V ~{sep=' -V ' segments_vcfs} --disable-sequence-dictionary-validation --model-call-intervals ~{model_intervals} \
-    -ped ~{ped_file}
+    -R ~{ref_fasta} -O clustered.vcf.gz -V ~{sep=' -V ' segments_vcfs} --disable-sequence-dictionary-validation --model-call-intervals ~{model_intervals} -ped ~{ped_file}
     >>>
 
     output {
@@ -232,7 +230,13 @@ task FastCombine {
   }
 
   command <<<
+  #bcftools gets pissy if the indexes look older than their VCFs
+  index_fofn=~{write_lines(input_vcf_indexes)}
+  while read index; do touch $index; done < $index_fofn
+
   bcftools merge -l ~{write_lines(input_vcfs)} -o combined.vcf.gz -O z --threads 4 -m all -0
+
+  tabix combined.vcf.gz
   >>>
 
   output {
@@ -247,4 +251,4 @@ task FastCombine {
     cpu: "1"
     disks: "local-disk " + select_first([disk_size, 50]) + " HDD"
   }
-}
+}}
