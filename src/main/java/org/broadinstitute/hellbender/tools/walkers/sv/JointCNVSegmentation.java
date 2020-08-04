@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 
 @BetaFeature
 @CommandLineProgramProperties(
-        summary = "Gathers single-sample segmented gCNV VCFs, harmonizes breakpoints, and outputs a cohort VCF with genotypes.  Note that this tool assumes ploidy 2.",
+        summary = "Gathers single-sample segmented gCNV VCFs, harmonizes breakpoints, and outputs a cohort VCF with genotypes.",
         oneLineSummary = "Combined single-sample segmented gCNV VCFs.",
         programGroup = StructuralVariantDiscoveryProgramGroup.class
 )
