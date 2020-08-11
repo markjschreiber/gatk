@@ -2,6 +2,7 @@ version 1.0
 
 import "../cnv_common_tasks.wdl" as CNVTasks
 import "AnnotateChromosome.wdl" as AnnotateVcf
+import "cnv_germline_case_scattered_workflow.wdl" as ScatterWorkflow
 
 workflow JointCallExomeCNVs {
 
@@ -9,14 +10,18 @@ workflow JointCallExomeCNVs {
     #### required basic arguments ####
     ##################################
     input {
-      File intervals
-      File? blacklist_intervals
+      Int num_samples_per_scatter_block
+      #sample-specific arguments
       File contig_ploidy_calls_tar
       Array[File]+ segments_vcfs
       Array[File]+ segments_vcf_indexes
       Array[File]+ intervals_vcf
       Array[File]+ intervals_vcf_indexes
       Array[Array[File]] gcnv_calls_tars
+
+      #model-specific arguments
+      File intervals
+      File? blacklist_intervals
       Array[File] gcnv_model_tars
       Array[File] calling_configs
       Array[File] denoising_configs
@@ -44,10 +49,43 @@ workflow JointCallExomeCNVs {
         x_contig_name = x_contig_name
     }
 
-    call JointSegmentation {
+    call ScatterWorkflow.SplitInputArray as SplitSegmentsVcfsList {
+        input:
+            input_array = segments_vcfs,
+            num_inputs_in_scatter_block = num_samples_per_scatter_block,
+            gatk_docker = gatk_docker
+    }
+
+    call ScatterWorkflow.SplitInputArray as SplitSegmentsIndexesList {
+        input:
+            input_array = segments_vcf_indexes,
+            num_inputs_in_scatter_block = num_samples_per_scatter_block,
+            gatk_docker = gatk_docker
+    }
+
+    Array[Array[String]] split_segments = SplitSegmentsVcfsList.split_array
+    Array[Array[String]] split_segments_indexes = SplitSegmentsIndexesList.split_array
+
+    if (length(split_segments) > 1) {
+      scatter (subarray_index in range(length(split_segments))) {
+        call JointSegmentation as ScatterJointSegmentation {
+          input:
+            segments_vcfs = split_segments[subarray_index],
+            segments_vcf_indexes = split_segments_indexes[subarray_index],
+            ped_file = MakePedFile.ped_file,
+            ref_fasta = ref_fasta,
+            ref_fasta_fai = ref_fasta_fai,
+            ref_fasta_dict = ref_fasta_dict,
+            gatk_docker = gatk_docker_clustering,
+            model_intervals = intervals
+        }
+      }
+    }
+
+    call JointSegmentation as GatherJointSegmentation {
       input:
-        segments_vcfs = segments_vcfs,
-        segments_vcf_indexes = segments_vcf_indexes,
+        segments_vcfs = select_first([flatten(ScatterJointSegmentation.segments_vcfs), segments_vcfs]),
+        segments_vcf_indexes = select_first([flatten(ScatterJointSegmentation.segments_vcf_indexes), segments_vcfs]),
         ped_file = MakePedFile.ped_file,
         ref_fasta = ref_fasta,
         ref_fasta_fai = ref_fasta_fai,
@@ -74,8 +112,8 @@ workflow JointCallExomeCNVs {
               sample_index = scatter_index,
               intervals_vcf = intervals_vcf[scatter_index],
               intervals_vcf_index = intervals_vcf_indexes[scatter_index],
-              clustered_vcf = JointSegmentation.clustered_vcf,
-              clustered_vcf_index = JointSegmentation.clustered_vcf_index,
+              clustered_vcf = GatherJointSegmentation.clustered_vcf,
+              clustered_vcf_index = GatherJointSegmentation.clustered_vcf_index,
               gatk_docker = gatk_docker_clustering
       }
     }
@@ -251,4 +289,4 @@ task FastCombine {
     cpu: "1"
     disks: "local-disk " + select_first([disk_size, 50]) + " HDD"
   }
-}}
+}

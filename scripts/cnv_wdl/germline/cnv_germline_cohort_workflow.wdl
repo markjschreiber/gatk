@@ -365,7 +365,9 @@ workflow CNVGermlineCohortWorkflow {
         Array[Array[File]] gcnv_calls_tars = GermlineCNVCallerCohortMode.gcnv_call_tars
         Array[File] gcnv_tracking_tars = GermlineCNVCallerCohortMode.gcnv_tracking_tar
         Array[File] genotyped_intervals_vcfs = PostprocessGermlineCNVCalls.genotyped_intervals_vcf
+        Array[File] genotyped_intervals_vcf_indexes = PostprocessGermlineCNVCalls.genotyped_intervals_vcf_index
         Array[File] genotyped_segments_vcfs = PostprocessGermlineCNVCalls.genotyped_segments_vcf
+        Array[File] genotyped_segments_vcf_indexes = PostprocessGermlineCNVCalls.genotyped_segments_vcf_index
         Array[File] sample_qc_status_files = CollectSampleQualityMetrics.qc_status_file
         Array[String] sample_qc_status_strings = CollectSampleQualityMetrics.qc_status_string
         File model_qc_status_file = CollectModelQualityMetrics.qc_status_file
