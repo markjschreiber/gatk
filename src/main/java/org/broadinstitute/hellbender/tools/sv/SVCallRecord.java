@@ -87,10 +87,10 @@ public class SVCallRecord implements Feature {
 
         final List<String> algorithms = Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM);
 
-        if (variant.getAlternateAlleles().size() > 1) {
+        /*if (variant.getAlternateAlleles().size() > 1) {
             throw new UserException.BadInput("Deletions and duplications should be output as separate variant contexts.  "
                     + variant.getContig() + ":" + variant.getStart() + " contains multiple alternate alleles: " + variant.getAlternateAlleles());
-        }
+        }*/
         boolean isDel = false;
         for (final Genotype g : variant.getGenotypes()) {
             if (g.isHomRef() || (g.isNoCall() && !g.hasExtendedAttribute(GATKSVVCFConstants.COPY_NUMBER_FORMAT))) {
