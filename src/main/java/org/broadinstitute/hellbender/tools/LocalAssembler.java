@@ -37,6 +37,7 @@ public class LocalAssembler extends PairWalker {
     public static final int MIN_THIN_OBS = 4;
     public static final int MIN_GAPFILL_COUNT = 3;
     public static final int TOO_MANY_TRAVERSALS = 100000;
+    public static final int MIN_SV_SIZE = 50;
 
     @Argument(fullName=StandardArgumentDefinitions.OUTPUT_LONG_NAME,
             shortName=StandardArgumentDefinitions.OUTPUT_SHORT_NAME,
@@ -91,6 +92,7 @@ public class LocalAssembler extends PairWalker {
         try {
             final Collection<Traversal> allTraversals =
                     traverseAllPaths(contigs, readPaths, contigTransitsMap);
+            removeTriviallyDifferentTraversals(allTraversals);
             writeTraversals(allTraversals, traversalsFilename);
         } catch ( final AssemblyTooComplexException x ) {
             logger.warn("Assembly too complex.  Writing contigs as traversals in " +
@@ -739,6 +741,7 @@ public class LocalAssembler extends PairWalker {
             }
         }
     }
+
     private static void clearTransitPairCount(
             final Map<Contig, List<TransitPairCount>> contigTransitsMap,
             final Contig predecessor,
@@ -821,6 +824,108 @@ public class LocalAssembler extends PairWalker {
             if ( list1.get(idx) != list2.get(idx) ) return false;
         }
         return true;
+    }
+
+    private static void removeTriviallyDifferentTraversals( final Collection<Traversal> allTraversals ) {
+        if ( allTraversals.isEmpty() ) {
+            return;
+        }
+        final TreeSet<Traversal> sortedTraversals = new TreeSet<>(new TraversalEndpointComparator());
+        for ( final Traversal traversal : allTraversals ) {
+            sortedTraversals.add(traversal);
+            sortedTraversals.add(traversal.rc());
+        }
+        final Iterator<Traversal> traversalIterator = sortedTraversals.iterator();
+        Traversal prevTraversal = traversalIterator.next();
+        while ( traversalIterator.hasNext() ) {
+            final Traversal curTraversal = traversalIterator.next();
+            if ( isTriviallyDifferent(prevTraversal, curTraversal) ) {
+                traversalIterator.remove();
+            } else {
+                prevTraversal = curTraversal;
+            }
+        }
+        sortedTraversals.removeIf(Traversal::isRC);
+        allTraversals.clear();
+        allTraversals.addAll(sortedTraversals);
+    }
+
+    private static boolean isTriviallyDifferent( final Traversal traversal1, final Traversal traversal2 ) {
+        final Contig firstContig1 = traversal1.getFirstContig();
+        final Contig lastContig1 = traversal1.getLastContig();
+        final Contig firstContig2 = traversal2.getFirstContig();
+        final Contig lastContig2 = traversal2.getLastContig();
+        if ( firstContig1 != firstContig2 || lastContig1 != lastContig2 ) {
+            return false;
+        }
+        final int interiorSize1 = traversal1.getSequenceLength() - firstContig1.size() - lastContig1.size();
+        final int interiorSize2 = traversal2.getSequenceLength() - firstContig2.size() - lastContig2.size();
+
+        // if the path lengths are so different that one could harbor an SV, they're not trivially different
+        if ( Math.abs(interiorSize1 - interiorSize2) >= MIN_SV_SIZE ) {
+            return false;
+        }
+
+        // if the paths are small enough that there can't be an SV's worth of differences, they're trivially different
+        final int maxInteriorSize = Math.max(interiorSize1, interiorSize2);
+        if ( maxInteriorSize < MIN_SV_SIZE ) {
+            return true;
+        }
+
+        // dang, maybe there's enough material in common that there can't be an SV's worth of differences
+        // run a longest common subsequence algorithm to figure out the length of the common material
+        // DP matrix holds length of common material
+        final List<Contig> contigs1 = traversal1.getContigs();
+        final int rowLen = contigs1.size() - 1;
+        final int[][] rowPair = new int[2][];
+        rowPair[0] = new int[rowLen];
+        rowPair[1] = new int[rowLen];
+        int pairIdx = 0;
+        final List<Contig> contigs2 = traversal2.getContigs();
+        final int nRows = contigs2.size() - 1;
+        for ( int idx2 = 1; idx2 != nRows; ++idx2 ) {
+            final int[] curRow = rowPair[pairIdx];
+            final int[] prevRow = rowPair[pairIdx ^ 1];
+            pairIdx ^= 1;
+
+            final int id2 = contigs2.get(idx2).getId();
+            for ( int idx1 = 1; idx1 != rowLen; ++idx1 ) {
+                final Contig tig1 = contigs1.get(idx1);
+                if ( tig1.getId() == id2 ) {
+                    // if the previous cells also contain a match we've already removed the K-1 bases upstream
+                    final boolean extendMatch = contigs1.get(idx1 -1).getId() == contigs2.get(idx2 - 1).getId();
+                    curRow[idx1] = prevRow[idx1 - 1] + (extendMatch ? tig1.getNKmers() : tig1.size());
+                } else {
+                    curRow[idx1] = Math.max(curRow[idx1 - 1], prevRow[idx1]);
+                }
+            }
+        }
+        final int commonLen = rowPair[pairIdx ^ 1][rowLen - 1];
+        return (maxInteriorSize - commonLen) < MIN_SV_SIZE;
+    }
+
+    private static class TraversalEndpointComparator implements Comparator<Traversal> {
+        @Override
+        public int compare( final Traversal traversal1, final Traversal traversal2 ) {
+            int cmp = Integer.compare(traversal1.contigs.get(0).getId(), traversal2.contigs.get(0).getId());
+            if ( cmp != 0 ) {
+                return cmp;
+            }
+            final int last1 = traversal1.contigs.size() - 1;
+            final int last2 = traversal2.contigs.size() - 1;
+            cmp = Integer.compare(traversal1.contigs.get(last1).getId(), traversal2.contigs.get(last2).getId());
+            if ( cmp != 0 ) {
+                return cmp;
+            }
+            final int stop = Math.min(last1, last2);
+            for ( int idx = 1; idx < stop; ++idx ) {
+                cmp = Integer.compare(traversal1.contigs.get(idx).getId(), traversal2.contigs.get(idx).getId());
+                if ( cmp != 0 ) {
+                    return cmp;
+                }
+            }
+            return Integer.compare(last1, last2);
+        }
     }
 
     private static void writeDOT( final List<ContigImpl> contigs, final String fileName ) {
@@ -1504,7 +1609,7 @@ public class LocalAssembler extends PairWalker {
             this.rc = contig;
         }
 
-        @Override public int getId() { return rc.getId(); }
+        @Override public int getId() { return ~rc.getId(); }
         @Override public CharSequence getSequence() { return sequence; }
         @Override public int getMaxObservations() { return rc.getMaxObservations(); }
         @Override public KmerAdjacency getFirstKmer() { return rc.getLastKmer().rc(); }
@@ -1864,10 +1969,21 @@ public class LocalAssembler extends PairWalker {
         private final List<Contig> contigs;
 
         public Traversal( final Collection<Contig> contigs ) {
+            if ( contigs == null || contigs.isEmpty() ) {
+                throw new GATKException("null or empty list of contigs in traversal");
+            }
             this.contigs = new ArrayList<>(contigs);
         }
 
-        public Traversal rc() { return new Traversal(new ListRC(contigs)); }
+        private Traversal( final List<Contig> contigs, final boolean isRC ) {
+            this.contigs = contigs;
+        }
+
+        public List<Contig> getContigs() { return contigs; }
+        public Contig getFirstContig() { return contigs.get(0); }
+        public Contig getLastContig() { return contigs.get(contigs.size() - 1); }
+        public Traversal rc() { return new Traversal(new ListRC(contigs), true); }
+        public boolean isRC() { return contigs instanceof ListRC; }
 
         public String getName() {
             final StringBuilder sb = new StringBuilder();
@@ -1878,6 +1994,15 @@ public class LocalAssembler extends PairWalker {
             }
             return sb.toString();
         }
+
+        public int getSequenceLength() {
+            int len = 0;
+            for ( final Contig contig : contigs ) {
+                len += contig.getNKmers();
+            }
+            return len + Kmer.KSIZE - 1;
+        }
+
         public String getSequence() {
             if ( contigs.size() == 0 ) return "";
             final StringBuilder sb = new StringBuilder(contigs.get(0).getSequence().subSequence(0, Kmer.KSIZE - 1));
