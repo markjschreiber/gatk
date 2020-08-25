@@ -93,7 +93,7 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
     @Argument(fullName= StandardArgumentDefinitions.OUTPUT_LONG_NAME,
             shortName=StandardArgumentDefinitions.OUTPUT_SHORT_NAME,
             doc="The combined GVCF output file", optional=false)
-    @WorkflowOutput(requiredCompanions={StandardArgumentDefinitions.OUTPUT_LONG_NAME + "Index"})
+    @WorkflowOutput(optionalCompanions={StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
     private File outputFile;
 
     @Argument(fullName=BP_RES_LONG_NAME, doc = "If specified, convert banded gVCFs to all-sites gVCFs", optional=true)

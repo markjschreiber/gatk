@@ -12,7 +12,7 @@ public final class OptionalReferenceInputArgumentCollection extends ReferenceInp
     private static final long serialVersionUID = 1L;
 
     @Argument(fullName = StandardArgumentDefinitions.REFERENCE_LONG_NAME, shortName = StandardArgumentDefinitions.REFERENCE_SHORT_NAME, doc = "Reference sequence", optional = true)
-    @WorkflowInput(requiredCompanions = {"referenceDictionary", "referenceIndex"})
+    @WorkflowInput(requiredCompanions = { StandardArgumentDefinitions.REFERENCE_INDEX_COMPANION, StandardArgumentDefinitions.REFERENCE_DICTIONARY_COMPANION})
     private GATKPath referenceInputPathSpecifier;
 
     @Override

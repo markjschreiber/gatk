@@ -61,7 +61,7 @@ import java.util.Random;
 @WorkflowProperties
 public class DownsampleByDuplicateSet extends DuplicateSetWalker {
     @Argument(fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME, shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME, doc = "Output file")
-    @WorkflowOutput(requiredCompanions = {StandardArgumentDefinitions.OUTPUT_LONG_NAME + "Index"})
+    @WorkflowOutput(optionalCompanions = {StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
     public GATKPath outputBam;
 
     public static final String FRACTION_TO_KEEP_NAME = "fraction-to-keep";

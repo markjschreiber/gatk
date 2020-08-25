@@ -60,7 +60,7 @@ public final class ReadAnonymizer extends ReadWalker {
             fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME,
             shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME,
             doc="Output bam file.")
-    @WorkflowOutput(requiredCompanions={StandardArgumentDefinitions.OUTPUT_LONG_NAME + "Index"})
+    @WorkflowOutput(optionalCompanions={StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
     public GATKPath output;
 
     @Argument(

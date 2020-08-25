@@ -163,7 +163,7 @@ public final class ClipReads extends ReadWalker {
      * The output SAM/BAM/CRAM file will be written here
      */
     @Argument(doc = "BAM output file", shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME, fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME)
-    @WorkflowOutput(requiredCompanions={StandardArgumentDefinitions.OUTPUT_LONG_NAME + "Index"})
+    @WorkflowOutput(optionalCompanions={StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
     GATKPath OUTPUT;
 
     /**

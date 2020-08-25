@@ -55,7 +55,7 @@ import org.broadinstitute.hellbender.utils.read.*;
 public final class LeftAlignIndels extends ReadWalker {
 
     @Argument(fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME, shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME,doc="Output BAM")
-    @WorkflowOutput(requiredCompanions={StandardArgumentDefinitions.OUTPUT_LONG_NAME + "Index"})
+    @WorkflowOutput(optionalCompanions={StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
     private GATKPath output;
 
     private SAMFileGATKReadWriter outputWriter = null;

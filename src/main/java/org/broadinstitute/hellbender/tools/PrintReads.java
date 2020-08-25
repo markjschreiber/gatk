@@ -91,7 +91,7 @@ public final class PrintReads extends ReadWalker {
     @Argument(fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME,
             shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME,
             doc="Write output to this file")
-    @WorkflowOutput(requiredCompanions={StandardArgumentDefinitions.OUTPUT_LONG_NAME + "Index"})
+    @WorkflowOutput(optionalCompanions={StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
     public GATKPath output;
     private SAMFileGATKReadWriter outputWriter;
 

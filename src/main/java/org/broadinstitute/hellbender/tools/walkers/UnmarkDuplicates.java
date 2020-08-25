@@ -69,7 +69,7 @@ public class UnmarkDuplicates extends ReadWalker {
             "Clears the 0x400 SAM flag bit on all reads.";
 
     @Argument(fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME, shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME, doc="Write output to this file")
-    @WorkflowOutput(requiredCompanions={StandardArgumentDefinitions.OUTPUT_LONG_NAME + "Index"})
+    @WorkflowOutput(optionalCompanions={StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
     public GATKPath OUTPUT;
 
     private SAMFileGATKReadWriter outputWriter;

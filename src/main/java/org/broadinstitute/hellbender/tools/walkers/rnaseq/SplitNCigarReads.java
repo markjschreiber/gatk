@@ -80,7 +80,7 @@ public final class SplitNCigarReads extends MultiplePassReadWalker {
     static final String MATE_CIGAR_TAG = "MC";
 
     @Argument(fullName = OUTPUT_LONG_NAME, shortName = OUTPUT_SHORT_NAME, doc="Write output to this BAM filename")
-    @WorkflowOutput(requiredCompanions={StandardArgumentDefinitions.OUTPUT_LONG_NAME + "Index"})
+    @WorkflowOutput(optionalCompanions={StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
     GATKPath OUTPUT;
 
     /**
